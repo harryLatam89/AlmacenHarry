@@ -99,6 +99,19 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null
         return db.insert(TABLE_PRODUCTO, null, values)
     }
 
+    fun deleteProducto(id: Int): Int {
+        val db = this.writableDatabase
+        return db.delete(TABLE_PRODUCTO, "$KEY_PRODUCTO_ID = ?", arrayOf(id.toString()))
+    }
+    fun updateProducto(id: Int, nuevoNombre: String): Int {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put(KEY_PRODUCTO_NOMBRE, nuevoNombre)
+        }
+        return db.update(TABLE_PRODUCTO, values, "$KEY_PRODUCTO_ID = ?", arrayOf(id.toString()))
+    }
+
+
     fun getAllProductos(): List<Producto> {
         val productosList = ArrayList<Producto>()
         val selectQuery = "SELECT * FROM $TABLE_PRODUCTO"

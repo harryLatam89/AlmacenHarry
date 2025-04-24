@@ -30,14 +30,10 @@ class CategoriaViewActivity : AppCompatActivity() {
     private fun loadCategorias() {
         val categorias = dbHelper.getAllCategorias()
 
-//        adapter = CategoriaAdapter(this, categorias) { categoria ->  // Este es el onDeleteClickListener
-//
-//            eliminarCategoria(categoria)
-//        }
         adapter = CategoriaAdapter(
             this,
             categorias,
-            { categoria -> eliminarCategoria(categoria) },
+            { categoria -> eliminarCategoria(categoria) },  // Este es el onDeleteClickListener
             { categoria -> abrirActualizarCategoria(categoria) }
         )
         listViewCategorias.adapter = adapter
