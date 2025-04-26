@@ -6,10 +6,31 @@ import android.database.sqlite.SQLiteOpenHelper
 import com.example.almacenharry.Categoria
 import com.example.almacenharry.Producto
 
-class DBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+class DBHelper  (context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+// esto mantiene la base de datos abier
+    private var database: SQLiteDatabase? = null
 
+    fun openDatabase() {
+        if (database == null || !database!!.isOpen) {
+            database = this.writableDatabase
+        }
+    }
+
+    fun closeDatabase() {
+        database?.close()
+        database = null
+    }
+
+    // Usa este metodo en lugar de getWritableDatabase() en tus operaciones
+    fun getDatabase(): SQLiteDatabase {
+        if (database == null || !database!!.isOpen) {
+            openDatabase()
+        }
+        return database!!
+    }
+    // fin de  esto mantiene la base de datos abieta
     companion object {
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 3
         private const val DATABASE_NAME = "ProductosDB"
 
         private const val TABLE_CATEGORIA = "categorias"
@@ -37,11 +58,58 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null
                 + KEY_PRODUCTO_CATEGORIA_ID + " INTEGER,"
                 + "FOREIGN KEY(" + KEY_PRODUCTO_CATEGORIA_ID + ") REFERENCES " + TABLE_CATEGORIA + "(" + KEY_CATEGORIA_ID + "))")
         db.execSQL(CREATE_PRODUCTOS_TABLE)
+
+        // Crear triggers
+        createTriggers(db)
+    }
+
+    private fun createTriggers(db: SQLiteDatabase) {
+        // Trigger para actualización en cascada de categorías
+        val TRIGGER_UPDATE_CATEGORIA = "CREATE TRIGGER IF NOT EXISTS trigger_update_categoria " +
+                "AFTER UPDATE ON $TABLE_CATEGORIA " +
+                "FOR EACH ROW " +
+                "BEGIN " +
+                "    UPDATE $TABLE_PRODUCTO " +
+                "    SET $KEY_PRODUCTO_CATEGORIA_ID = NEW.$KEY_CATEGORIA_ID " +
+                "    WHERE $KEY_PRODUCTO_CATEGORIA_ID = OLD.$KEY_CATEGORIA_ID; " +
+                "END;"
+        db.execSQL(TRIGGER_UPDATE_CATEGORIA)
+
+        // Trigger para eliminar productos cuando se elimina una categoría
+        val TRIGGER_DELETE_CATEGORIA = "CREATE TRIGGER IF NOT EXISTS trigger_delete_categoria " +
+                "BEFORE DELETE ON $TABLE_CATEGORIA " +
+                "FOR EACH ROW " +
+                "BEGIN " +
+                "    DELETE FROM $TABLE_PRODUCTO " +
+                "    WHERE $KEY_PRODUCTO_CATEGORIA_ID = OLD.$KEY_CATEGORIA_ID; " +
+                "END;"
+        db.execSQL(TRIGGER_DELETE_CATEGORIA)
+
+        // Trigger para verificar integridad antes de insertar un producto
+        val TRIGGER_CHECK_CATEGORIA = "CREATE TRIGGER IF NOT EXISTS trigger_check_categoria " +
+                "BEFORE INSERT ON $TABLE_PRODUCTO " +
+                "FOR EACH ROW " +
+                "BEGIN " +
+                "    SELECT CASE " +
+                "        WHEN ((SELECT $KEY_CATEGORIA_ID FROM $TABLE_CATEGORIA " +
+                "              WHERE $KEY_CATEGORIA_ID = NEW.$KEY_PRODUCTO_CATEGORIA_ID) IS NULL) " +
+                "        THEN RAISE(ABORT, 'La categoría no existe') " +
+                "    END; " +
+                "END;"
+        db.execSQL(TRIGGER_CHECK_CATEGORIA)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_CATEGORIA")
+        // Eliminar triggers existentes
+        db.execSQL("DROP TRIGGER IF EXISTS trigger_update_categoria")
+        db.execSQL("DROP TRIGGER IF EXISTS trigger_delete_categoria")
+        db.execSQL("DROP TRIGGER IF EXISTS trigger_check_categoria")
+
+        // Eliminar tablas existentes
         db.execSQL("DROP TABLE IF EXISTS $TABLE_PRODUCTO")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_CATEGORIA")
+
+        // Recreate tables and triggers
         onCreate(db)
     }
 
