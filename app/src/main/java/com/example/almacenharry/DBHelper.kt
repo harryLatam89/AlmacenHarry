@@ -21,13 +21,6 @@ class DBHelper  (context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, nu
         database = null
     }
 
-    // Usa este metodo en lugar de getWritableDatabase() en tus operaciones
-    fun getDatabase(): SQLiteDatabase {
-        if (database == null || !database!!.isOpen) {
-            openDatabase()
-        }
-        return database!!
-    }
     // fin de  esto mantiene la base de datos abieta
     companion object {
         private const val DATABASE_VERSION = 3
@@ -124,7 +117,6 @@ class DBHelper  (context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, nu
         val db = this.writableDatabase
         return db.delete(TABLE_CATEGORIA, "$KEY_CATEGORIA_ID = ?", arrayOf(id.toString()))
     }
-
     fun updateCategoria(id: Int, nuevoNombre: String): Int {
         val db = this.writableDatabase
         val values = ContentValues().apply {
@@ -132,7 +124,6 @@ class DBHelper  (context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, nu
         }
         return db.update(TABLE_CATEGORIA, values, "$KEY_CATEGORIA_ID = ?", arrayOf(id.toString()))
     }
-
     fun getAllCategorias(): List<Categoria> {
         val categoriasList = ArrayList<Categoria>()
         val selectQuery = "SELECT * FROM $TABLE_CATEGORIA"
@@ -166,7 +157,6 @@ class DBHelper  (context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, nu
         values.put(KEY_PRODUCTO_CATEGORIA_ID, categoriaId)
         return db.insert(TABLE_PRODUCTO, null, values)
     }
-
     fun deleteProducto(id: Int): Int {
         val db = this.writableDatabase
         return db.delete(TABLE_PRODUCTO, "$KEY_PRODUCTO_ID = ?", arrayOf(id.toString()))
@@ -178,8 +168,6 @@ class DBHelper  (context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, nu
         }
         return db.update(TABLE_PRODUCTO, values, "$KEY_PRODUCTO_ID = ?", arrayOf(id.toString()))
     }
-
-
     fun getAllProductos(): List<Producto> {
         val productosList = ArrayList<Producto>()
         val selectQuery = "SELECT * FROM $TABLE_PRODUCTO"
